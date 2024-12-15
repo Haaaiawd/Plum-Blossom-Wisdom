@@ -1,5 +1,4 @@
-# Plum Blossom Wisdom
-
+# Plum Blossom Wisdom 梅花智数
 
 
 > 灵感来自同类型算卦AI
