@@ -1,0 +1,38 @@
+pdf_processing:
+  dpi: 300
+  language: 'chi_sim+eng'
+  tesseract_path: "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+  preprocessing:
+    enable: true
+    denoise: true
+    enhance_contrast: true
+
+image_captioning:
+  model_name: "Salesforce/blip-image-captioning-base"
+  device: "cuda"
+  max_length: 50
+
+output:
+  format: "json"
+  save_images: true
+  output_dir: "output"
+
+text_correction:
+  enable: true
+  model_name: "doubao-pro-128k"
+  device: "cuda"
+  batch_size: 1000
+  max_length: 512
+  api_key: "your-api-key-here"
+  api_secret: "your-api-secret-here"
+  endpoint: "your-endpoint-here"
+  max_retries: 3
+  retry_delay: 1 
+
+qa_generation:
+  api_key: "your-api-key-here"
+  api_secret: "your-api-secret-here"
+  endpoint: "your-endpoint-here"
+  model_name: "doubao-pro-128k"
+  max_segment_length: 2000
+  overlap_length: 200
