@@ -7,21 +7,6 @@
 > 梅花易数入门 (中国易学文化研究院 编)
 >
 
-
-
-:::info
-目录：
-
-1. 项目背景及概述
-2. 数据准备
-+ 数据收集与提取
-+ 数据清洗
-+ 数据预处理
-3. 微调训练
-4. prompt调整
-
-:::
-
 ## 项目背景及概述：
 ### 项目背景：
 在科学占据主导地位的今天，玄学以其神秘色彩仍然吸引着人们的目光。![在billibili，这样的教学视频有上百万的播放](https://cdn.nlark.com/yuque/0/2024/png/45387460/1734157198665-b2bf7f24-16c0-46fa-b793-37b573a1bd9d.png)
@@ -64,8 +49,11 @@ tenacity==8.2.3
 ```
 github中安装tesseract及其中文包与poppler
 > tesseract项目https://github.com/tesseract-ocr/tesseract
+
 > tesseract中文包https://github.com/tesseract-ocr/tessdata/blob/main/chi_sim.traineddata
+
 > poppler项目https://github.com/oschwartz10612/poppler-windows
+
 > poppler需要设置环境变量并重启电脑
 
 #### 提取pdf
