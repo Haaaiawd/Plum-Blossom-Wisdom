@@ -1,6 +1,5 @@
 # Plum Blossom Wisdom 梅花智数
 
-
 > 灵感来自同类型算卦AI
 >
 > 梅花易数入门 (中国易学文化研究院 编)
@@ -13,12 +12,12 @@
 ![在billibili，这样的教学视频有上百万的播放](https://cdn.nlark.com/yuque/0/2024/png/45387460/1734157198665-b2bf7f24-16c0-46fa-b793-37b573a1bd9d.png)
 > 在billibili，这样的教学视频有上百万的播放
 
-对于将卦象用运算表示，<font style="color:rgb(13, 13, 13);">通过数字、点滴变化推演出各种可能性的梅花易数来说，玄学是否具有其独到之处尚无定论。</font>
+对于将卦象用运算表示，通过数字、点滴变化推演出各种可能性的梅花易数来说，玄学是否具有其独到之处尚无定论。
 
 在这样的情形下，**最理智的行为是去真正了解它，然后再来看到底是猫是虎**。在学习成本已经传承等方面的妥协下，也许将其做成AI来一探究竟是最好的选择
 
 ### 项目概述
-本项目使用**《梅花易数入门 (中国易学文化研究院 编)》**、**《****梅花易数白话解****》**作为基础框架，使用讯飞大模型进行精调。使用该大模型时，梅花易数AI会询问时间，人物，环境，动静等要素，根据要素进行计算后给出发生某件事的预测。
+本项目使用**《梅花易数入门 (中国易学文化研究院 编)》**、**《梅花易数白话解》**作为基础框架，使用讯飞大模型进行精调。使用该大模型时，梅花易数AI会询问时间，人物，环境，动静等要素，根据要素进行计算后给出发生某件事的预测。
 
 #### 后续考虑添加:
 1. 《图解邵康节易数 1：邵康节梅花易数》
@@ -67,121 +66,123 @@ github中安装tesseract及其中文包与poppler
 + │   ├── pdf_processor.py  # PDF处理核心类
 + │   ├── image_captioner.py # 图片描述生成器
 + │   ├── text_cleaner.py   # 文本清洗工具
-+ │   └── data_formatter.py # 数据格式化工具
++ │   ├── text_corrector.py # 文本校正工具
++ │   ├── data_formatter.py # 数据格式化工具
++ │   ├── qa_generator.py   # 问答对生成器
++ │   └── analyze_hexagram.py # 卦象分析工具
 + ├── config/
 + │   └── config.yaml       # 配置文件
 + └── output/               # 输出目录
 
-**由于tesseract精度有限，因此我们使用ai进行校正**
-```python
-import time
-import logging
-from typing import List, Dict
-from volcenginesdkarkruntime import Ark
+**由于tesseract精度有限，因此我们使用豆包AI进行校正和识图**
 
-class TextCorrector:
-    def __init__(self, config):
-        self.config = config['text_correction']
-        self.logger = logging.getLogger(__name__)
-        
-        # 初始化 Ark 客户端
-        self.client = Ark(
-            ak=self.config['api_key'],
-            sk=self.config['api_secret']
-        )
-        self.model_id = self.config['endpoint']
-        
-        self.max_retries = self.config.get('max_retries', 3)
-        self.batch_size = self.config.get('batch_size', 1000)
-    
-    def _call_api(self, text: str) -> str:
-        try:
-            # 创建对话请求
-            response = self.client.chat.completions.create(
-                model=self.model_id,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "你是一个专业的文本校对专家，负责修正OCR文本中的错误。请直接返回修正后的文本，不需要任何额外说明。"
-                    },
-                    {
-                        "role": "user",
-                        "content": f"请帮我校对和修正以下OCR识别的文本，确保文字通顺、无错别字：\n\n{text}"
-                    }
-                ],
-                temperature=0.3,
-                top_p=0.8,
-                max_tokens=2048
-            )
-            
-            return response.choices[0].message.content.strip()
-            
-        except Exception as e:
-            self.logger.error(f"API调用失败: {str(e)}")
-            raise
-    
-    def correct_text(self, text: str) -> str:
-        """处理文本并进行校正"""
-        if not text.strip():
-            return text
-            
-        # 分段处理长文本
-        segments = self._split_text(text)
-        corrected_segments = []
-        
-        for segment in segments:
-            try:
-                corrected_text = self._call_api(segment)
-                corrected_segments.append(corrected_text)
-                # 添加延时避免API限制
-                time.sleep(0.5)
-            except Exception as e:
-                self.logger.error(f"处理文本段落时出错: {str(e)}")
-                corrected_segments.append(segment)  # 如果失败则保留原文
-        
-        return "\n".join(corrected_segments)
-    
-    def _split_text(self, text: str) -> List[str]:
-        """将长文本分割成适合API处理的片段"""
-        segments = []
-        current_segment = []
-        current_length = 0
-        
-        for paragraph in text.split('\n'):
-            if current_length + len(paragraph) > self.batch_size:
-                if current_segment:
-                    segments.append('\n'.join(current_segment))
-                current_segment = [paragraph]
-                current_length = len(paragraph)
-            else:
-                current_segment.append(paragraph)
-                current_length += len(paragraph)
-        
-        if current_segment:
-            segments.append('\n'.join(current_segment))
-        
-        return segments
+### 文本清理工具使用说明
+项目中的文本清理工具 `text_cleaner.py` 提供了以下功能：
+1. 自动检测和处理文件编码
+2. 清理文本格式，包括：
+   - 统一空白字符
+   - 移除特殊控制字符
+   - 清理多余空行
+   - 移除页眉页脚数字标记
+3. 自动将输出文件保存为UTF-8编码
+
+#### 使用方法：
+直接运行 text_cleaner.py：
+```bash
+python src/text_cleaner.py
 ```
 
-![在跑中的ai校正](https://cdn.nlark.com/yuque/0/2024/png/45387460/1734173725632-adb5adcd-d8d5-4fcb-9c66-cda52a3efce4.png)
+脚本会：
+- 自动检测输入文件的编码
+- 尝试多种编码方式读取文件
+- 清理文本内容
+- 以UTF-8编码保存处理后的文件
 
+### 问答对生成工具使用说明
+项目提供了完整的文本处理到问答对生成的流程：
 
+1. **文本清理**
+```bash
+python src/text_cleaner.py
+```
+- 自动处理文件编码
+- 清理文本格式
+- 输出清理后的UTF-8文本文件
+
+2. **生成问答对**
+```bash
+python test_qa_generator.py
+```
+- 自动识别和分割章节
+- 为每个章节生成问答对
+- 输出：
+  - 各章节问答对（`chapter_XXX_章节名.json`）
+  - 合并后的完整问答对（`all_qa_pairs.json`）
+
+3. **问答对处理**
+```bash
+python test_qa_operator.py
+```
+- 处理生成的问答对
+- 转换为训练所需格式
+
+### 注意事项
+- 确保已正确配置 `config.yaml` 中的API密钥
+- 每个章节的处理都有延时，避免API调用过于频繁
+- 生成的问答对存储在指定的输出目录中
 
 ---
 
-## 🚫以下正在施工🚧
-### 数据清洗
-先使用正则运算进行基本的清洗
+## 使用说明
 
-### 数据预处理
-如tianji项目中的数据处理模块，使用ai转化为问答形式
+### 1. 安装依赖
+确保你已经安装了所有必要的依赖项。你可以使用以下命令安装依赖项：
+```bash
+pip install -r requirements.txt
+```
 
-(经实践，tianji生成的格式不对称于讯飞的格式要求，已在其基础上修改为Alpaca格式)
+### 2. 配置文件
+确保 `config/config.yaml` 文件存在并且配置正确。特别是 `image_captioning` 和 `pdf_processing` 部分的配置。
 
-### 微调训练
-使用讯飞大模型网站进行微调，视效果调整
+### 3. 处理PDF文件
+使用以下命令运行主程序，提取PDF中的图片和文本：
+```bash
+python src/main.py path/to/your.pdf --config config/config.yaml
+```
 
+### 4. 使用豆包AI进行识图
+你可以使用 `analyze_hexagram.py` 脚本来分析卦象图片，并生成描述。首先在代码中指定图片路径，然后运行脚本：
+```bash
+python src/analyze_hexagram.py
+```
 
+### 5. 手动插入数据
+将豆包AI生成的描述手动插入到数据集中，并使用 `data_formatter.py` 格式化数据。
 
-### prompt调整
-预计我们会将我们的梅花易数AI设置统一的输入输出及追问模版，以便其规范性。同时会让其输出他的数学运算过程，及算卦依据。
+### 6. 生成问答对
+使用 `qa_generator.py` 生成问答对：
+```bash
+python src/qa_generator.py input_file.json output_file.json
+```
+
+### 目录结构
+确保你的项目目录结构如下：
+```
+project/
+├── README.md
+├── requirements.txt
+├── src/
+│   ├── main.py
+│   ├── pdf_processor.py
+│   ├── image_captioner.py
+│   ├── text_cleaner.py
+│   ├── text_corrector.py
+│   ├── data_formatter.py
+│   ├── qa_generator.py
+│   └── analyze_hexagram.py
+├── config/
+│   └── config.yaml
+└── output/
+```
+
+这样，你就可以使用豆包AI进行识图，并手动插入数据到数据集中。然后使用项目中的工具进行数据处理和问答对生成。

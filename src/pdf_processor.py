@@ -44,6 +44,10 @@ class PDFProcessor:
         for i, image in enumerate(images):
             # 图像预处理以提高OCR质量
             processed_image = self.preprocess_image(image)
+            
+            # 检测页面中的卦象图案
+            hexagram_images = self.detect_hexagram_images(processed_image)
+            
             page_data = {
                 'page_number': i + 1,
                 'text': pytesseract.image_to_string(
@@ -51,7 +55,7 @@ class PDFProcessor:
                     lang=self.config['pdf_processing']['language'],
                     config=self.ocr_config
                 ),
-                'images': []
+                'images': hexagram_images
             }
             
             # 保存页面图片
@@ -80,3 +84,38 @@ class PDFProcessor:
         denoised = cv2.fastNlMeansDenoising(binary)
         
         return Image.fromarray(denoised)
+
+    def detect_hexagram_images(self, image):
+        """检测页面中的卦象图案"""
+        import cv2
+        import numpy as np
+        
+        # 转换为OpenCV格式
+        img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # 使用Canny边缘检测
+        edges = cv2.Canny(gray, 50, 150)
+        
+        # 寻找轮廓
+        contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        hexagram_images = []
+        for i, contour in enumerate(contours):
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # 筛选可能的卦象图案（根据尺寸和形状）
+            if w > 100 and h > 100 and 0.8 < w/h < 1.2:  # 近似正方形
+                # 提取感兴趣区域
+                roi = img[y:y+h, x:x+w]
+                
+                # 保存子图片
+                output_path = Path(self.config['output']['output_dir']) / f"hexagram_{len(hexagram_images)}.png"
+                cv2.imwrite(str(output_path), roi)
+                
+                hexagram_images.append({
+                    'path': str(output_path),
+                    'position': {'x': x, 'y': y, 'width': w, 'height': h}
+                })
+        
+        return hexagram_images

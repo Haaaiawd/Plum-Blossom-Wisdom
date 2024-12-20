@@ -11,9 +11,10 @@ class TextCorrector:
         # 初始化 Ark 客户端
         self.client = Ark(
             ak=self.config['api_key'],
-            sk=self.config['api_secret']
+            sk=self.config['api_secret'],
+            region='cn-north-1'  # 确保指定正确的区域
         )
-        self.model_id = self.config['endpoint']
+        self.model_id = self.config['model_name']
         
         self.max_retries = self.config.get('max_retries', 3)
         self.batch_size = self.config.get('batch_size', 1000)
@@ -85,4 +86,4 @@ class TextCorrector:
         if current_segment:
             segments.append('\n'.join(current_segment))
         
-        return segments 
+        return segments

@@ -28,4 +28,4 @@ def test_correction():
         print(f"错误: {str(e)}")
 
 if __name__ == "__main__":
-    test_correction() 
+    test_correction()

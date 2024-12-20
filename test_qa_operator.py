@@ -20,11 +20,11 @@ def extract_and_merge_conversations(folder_path, output_file):
                             'output': item['output'],
                             'system': SYSTEM_PROMPT,
                         }
-                    except Exception as e : 
+                        # 将每个对话包装在一个 'conversation' 键中，并作为独立对象加入列表
+                        all_conversations.append(extracted)
+                    except Exception as e:
                         # 如果不满足json条件就不进行保存，这个时候一般都是json出错
-                        print(item)
-                    # 将每个对话包装在一个 'conversation' 键中，并作为独立对象加入列表
-                    all_conversations.append(extracted)
+                        print(f"Error processing item: {item}, error: {e}")
 
     # 将合并后的所有对话数据写入一个新的JSON文件
     with open(output_file, 'w', encoding='utf-8') as file:
@@ -33,5 +33,5 @@ def extract_and_merge_conversations(folder_path, output_file):
 # 使用示例
 SYSTEM_PROMPT = """你是精通西马的左派人士，反对修正主义，批判性看待西马"""
 folder_path = 'real'  # 要扫描的文件夹路径
-output_file = 'success.json'     # 输出文件的名称和路径
+output_file = 'success.json'  # 输出文件的名称和路径
 extract_and_merge_conversations(folder_path, output_file)

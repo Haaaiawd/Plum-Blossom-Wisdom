@@ -15,6 +15,21 @@ def setup_logging():
     )
     return logging.getLogger(__name__)
 
+def process_hexagrams(raw_data, image_captioner):
+    """处理所有检测到的卦象图案"""
+    logger = logging.getLogger(__name__)
+    logger.info("开始分析卦象图案...")
+    
+    for page in raw_data:
+        for image in page.get('images', []):
+            if 'path' in image:
+                # 分析卦象图案
+                image['analysis'] = image_captioner.analyze_hexagram(image['path'])
+                # 生成完整描述
+                image['caption'] = image_captioner.generate_caption(image['path'])
+                
+    return raw_data
+
 def main():
     # 解析命令行参数
     parser = argparse.ArgumentParser(description='PDF内容提取与处理工具')
@@ -39,6 +54,9 @@ def main():
         # 处理PDF
         logger.info("开始处理PDF文件...")
         raw_data = pdf_processor.extract_images_and_text(args.pdf_path)
+        
+        # 处理卦象图案
+        raw_data = process_hexagrams(raw_data, image_captioner)
         
         # 清理文本
         logger.info("清理提取的文本...")
@@ -68,4 +86,4 @@ def main():
         raise
 
 if __name__ == '__main__':
-    main() 
+    main()
